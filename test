@@ -1,0 +1,277 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <algorithm>
+#include <string.h>
+#include <vector>
+#include <queue>
+#include <stack>
+
+using namespace std;
+
+struct NODE {
+    int key;
+    NODE* left;
+    NODE* right;
+};
+
+NODE* createNODE(int data){
+    NODE *p = new NODE;
+    p->key = data;
+    p-> left = NULL;
+    p->right = NULL;
+    return p;
+}
+
+void LeftRotate(NODE* &root){
+	NODE* p = root->right;
+	root->right = p->left;
+	p->left = root;
+	root = p;
+}
+
+void RightRotate(NODE* &root){
+	NODE* p = root->left;
+	root->left = p->right;
+	p->right = root;
+	root = p;
+}
+
+int Height(NODE* root){
+	if(root == NULL)
+		return 0;
+	return max(Height(root->left), Height(root->right)) + 1;
+}
+
+void LevelOrder(NODE* root){
+	if(root == NULL)
+		return;
+	queue <NODE*> q;
+	q.push(root);
+	
+	while(!q.empty()){
+		NODE* p = q.front();
+		q.pop();
+		if(p->left != NULL){
+			q.push(p->left);
+		}
+		if(p->right != NULL){
+			q.push(p->right);
+		}
+		cout << p->key << "  ";
+	}
+}
+
+void balance(NODE* &root){
+	int bal = Height(root->left) - Height(root->right);
+	if(bal > 1){ // Cây lệch trái
+		if(Height(root->left->left) >= Height(root->left->right)) //Cây lệch trái trái
+			RightRotate(root);
+		if(Height(root->left->left) < Height(root->left->right)){ //Cây lệch trái phải
+			LeftRotate(root->left);
+			RightRotate(root);
+		}
+	}
+	if(bal < -1){ //Cây lệch phải
+		if(Height(root->right->right) >= Height(root->right->left)) //Cây lệch phải phải
+			LeftRotate(root);
+		if(Height(root->right->right) < Height(root->right->left)){ //Cây lệch phải trái
+			RightRotate(root->right);
+			LeftRotate(root);
+		}
+	}
+}
+
+void insertLoop(NODE* &root , int x){
+    if(root == NULL){
+        root = createNODE(x);
+        return;
+    }
+    NODE* p = root;
+    NODE* q = NULL;
+    while (p != NULL){
+        q=p ; 
+        if (p->key > x)
+            p = p->left;
+        else
+            p = p->right;
+    }
+    if (q->key > x)
+        q->left = createNODE(x);
+    else
+        q->right = createNODE(x);
+
+}
+
+void insert(NODE* &root, int x){
+    if (root == NULL)
+        root = createNODE(x);
+    if(root->key == x)
+        return;
+    if(root->key > x )
+        insert(root->left , x);
+    else    
+        insert(root->right,x);
+
+    balance(root);
+}
+
+NODE* createTree(vector<int> a, int n){
+    NODE * t = NULL;
+    for (int i = 0; i < n ; i++){
+        insert(t,a[i]);
+    }
+    return t;
+}
+
+void NLR(NODE* root){
+    stack<NODE*> stk;
+    NODE* p = root;
+    stk.push(p);
+    while(!stk.empty()){
+        p=stk.top();
+        stk.pop();
+        if(p->right!=NULL)
+            stk.push(p->right);
+        if(p->left!=NULL)
+            stk.push(p->left);
+        cout << p->key << " ";
+    }
+}
+
+void LNR(NODE* root){
+    stack<NODE*> stk;
+    NODE* p = root;
+    while (p != NULL || stk.empty() == false)
+    {
+        /* Reach the left most NODE of the
+           curr NODE */
+        while (p !=  NULL)
+        {
+            stk.push(p);
+            p = p->left;
+        }
+        p = stk.top();
+        stk.pop(); 
+        cout << p->key << " ";
+        p = p->right;
+  
+    } 
+}
+
+void LRN(NODE* root){
+    stack<NODE*> stk;
+    stack<NODE*> print;
+
+    NODE* p = root;
+    stk.push(p);
+
+    while(!stk.empty()){
+        p=stk.top();
+
+        stk.pop();
+        print.push(p);
+
+        if(p->left!=NULL)
+            stk.push(p->left);
+        if(p->right!=NULL)
+            stk.push(p->right);
+    }
+
+    while(!print.empty()){
+        cout<<print.top()->key<<" ";
+        print.pop();
+    }
+}
+
+// int minNode(NODE* pRoot){
+// 	if(pRoot == NULL)
+// 		return 1000000;
+// 	return min(min(pRoot->key, minNode(pRoot->left)), minNode(pRoot->right));
+// }
+// int maxNode(NODE* pRoot){
+// 	if(pRoot == NULL)
+// 		return -1000000;
+// 	return max(max(pRoot->key, maxNode(pRoot->left)), maxNode(pRoot->right));
+// }
+// bool isBST(NODE* pRoot){
+// 	if(pRoot == NULL)
+// 		return true;
+// 	if(pRoot->key < minNode(pRoot->right) && pRoot->key > maxNode(pRoot->left)){
+// 		return isBST(pRoot->left) && isBST(pRoot->right);
+// 	}
+// 	return false;
+// }
+// bool isAVL(NODE* pRoot){
+// 	if(pRoot == NULL)
+// 		return true;
+// 	int bal = Height(pRoot->L) - Height(pRoot->R);
+// 	return (bal > -2) && (bal < 2) && isBST(pRoot) && isAVL(pRoot->L) && isAVL(pRoot->R);
+// }
+
+void Remove(NODE* &root, int x){
+	if(root == NULL)
+		return;
+	else if(root->key < x)
+		Remove(root->right, x);
+	else if(root->key > x)
+		Remove(root->left, x);
+	else if(root->key == x){
+		if(root->left == NULL && root->right == NULL){ // 0 con
+			delete root;
+			root = NULL;
+		}
+		else if(root->left == NULL && root->right != NULL){
+			NODE* p = root;
+			root = root->right;
+			delete p;
+		}
+		else if(root->left != NULL && root->right == NULL){
+			NODE* p = root;
+			root = root->left;
+			delete p;
+		}
+		else if(root->left != NULL && root->right != NULL){
+			NODE* p = root->right;
+			while(p->left != NULL){
+				p = p->left;
+			}
+			root->key = p->key;
+			Remove(root->right, root->key);
+		}
+	}
+	if(root == NULL)
+		return;
+	balance(root);
+}
+
+int main(){
+	NODE *pRoot = NULL;
+	
+    // vector<congty> a;
+    // fstream in;
+    // in.open("MST.txt");
+    // string s;
+    // congty temp;
+    // getline(in,s);
+    // while(!in.eof()){
+    //     getline(in,s,'|');
+    //     temp.ten = s;
+    //     getline(in,s,'|');
+    //     long long tam = stoll(s);
+    //     temp.mst = tam;
+    //     getline(in,s);
+    //     temp.diachi=s;
+    //     a.push_back(temp);
+    // }
+    // int n = a.size();
+
+	vector<int> my_vector = {10, 30, 50, 40, 45, 60, 5, 1, 9};
+	int n = 9;
+	pRoot = createTree(my_vector, n);
+	// NLR(pRoot);
+	// LevelOrder(pRoot);
+	// LNR(pRoot);
+    // LRN(pRoot);
+
+}
